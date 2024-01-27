@@ -1,0 +1,45 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract TabletContract {
+    address public owner;
+    mapping(address => uint256) public tabletStock;
+
+    event TabletPurchased(address indexed buyer, uint256 count);
+    event TabletConsumed(address indexed consumer, uint256 count);
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only the owner can call this function");
+        _;
+    }
+
+    modifier sufficientStock(uint256 count) {
+        require(tabletStock[msg.sender] >= count, "Insufficient stock");
+        _;
+    }
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    function purchaseTablet(uint256 count) external payable {
+        assert(count > 5);
+
+        uint256 cost = count * 1;  // Adjust the cost per tablet as needed
+        tabletStock[msg.sender] += count;
+        if (msg.value > cost) {
+            payable(msg.sender).transfer(msg.value - cost);
+        }
+
+        emit TabletPurchased(msg.sender, count);
+    }
+function consumeTablet(uint256 count) external onlyOwner sufficientStock(count) {
+    if (count != 1) {
+        revert("Cannot consume more than 1 unit at once");
+    }
+
+    tabletStock[msg.sender] -= count;
+
+    emit TabletConsumed(msg.sender, count);
+}
+}
